@@ -52,7 +52,7 @@ export default function StepOneBasicInfo({ setIsStepValid }: StepProps) {
 
   return (
     <Form {...form}>
-        <form onSubmit={handleSubmit((data)=>console.log("Step 1 data saved:", data))} className="space-y-6">
+        <form onSubmit={handleSubmit((data)=>console.log("Step 1 data saved:", data))} className="space-y-6 w-1/2">
             <FormField
             control ={control}
             name="fullName"
@@ -82,7 +82,7 @@ export default function StepOneBasicInfo({ setIsStepValid }: StepProps) {
                 <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                        <Input type="email" placeholder="john.doe@example.com" {...field}/>
+                        <Input type="email" placeholder="abc@example.com" {...field}/>
                     </FormControl>
                     <FormMessage/>
                 </FormItem>
@@ -95,7 +95,7 @@ export default function StepOneBasicInfo({ setIsStepValid }: StepProps) {
                     rules={{
                         required:'Phone Number is required',
                         pattern:{
-                            value: /^\+?[0-9\s-()]{7,20}$/,
+                            value: /^\+91\s\d{10}$/,
                             message:'Invalid phone number',
                         },
                     }}
@@ -103,7 +103,7 @@ export default function StepOneBasicInfo({ setIsStepValid }: StepProps) {
                         <FormItem>
                             <FormLabel>Phone Number</FormLabel>
                             <FormControl>
-                                <Input type="tel" placeholder="+1 555 123 4567"{...field}/>
+                                <Input type="tel" placeholder="+91 98765 12345"{...field}/>
                             </FormControl>
                             <FormMessage/>
                         </FormItem>
