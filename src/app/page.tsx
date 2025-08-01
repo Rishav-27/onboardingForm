@@ -1,42 +1,77 @@
+'use client';
 
+import { motion } from 'framer-motion';
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-8 text-center overflow-hidden">
-      {/* Background SVG */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center filter blur-sm opacity-70"
-        style={{ backgroundImage: `url('http://googleusercontent.com/image_generation_content/0')` }}
-      ></div>
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-indigo-100 via-white to-blue-50 flex items-center justify-center">
+      
+      {/* Animated SVG Wave Background */}
+      <svg
+        className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
+        viewBox="0 0 1440 320"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="none"
+      >
+        <path
+          fill="url(#waveGradient)"
+          fillOpacity="1"
+          d="M0,96L48,122.7C96,149,192,203,288,208C384,213,480,171,576,170.7C672,171,768,213,864,213.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224V0H1392C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0H0Z"
+        />
+        <defs>
+          <linearGradient id="waveGradient" x1="0" y1="0" x2="1440" y2="320" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#93c5fd" />
+            <stop offset="1" stopColor="#c4b5fd" />
+          </linearGradient>
+        </defs>
+      </svg>
 
-      {/* Main Content Container */}
-      <main className="relative z-10 bg-white bg-opacity-90 p-10 rounded-lg shadow-xl max-w-xl w-full">
-        <h1 className="text-5xl font-extrabold text-blue-700 mb-6">Welcome!</h1>
-        <p className="text-lg text-gray-700 leading-relaxed mb-10">
-          We&apos;re thrilled to have you here. Please choose an option below to get started with our onboarding process or explore employee resources.
+      {/* Floating Circles (just for subtle motion effect) */}
+      <motion.div
+        className="absolute w-40 h-40 bg-purple-200 rounded-full top-10 left-10 opacity-30 blur-2xl"
+        animate={{ y: [0, 20, 0], x: [0, 10, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute w-24 h-24 bg-blue-200 rounded-full bottom-10 right-20 opacity-30 blur-2xl"
+        animate={{ y: [0, -15, 0], x: [0, -10, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      {/* Center Content */}
+      <motion.div
+        className="relative z-10 w-full max-w-3xl px-8 py-14 bg-white/40 backdrop-blur-md border border-white/30 rounded-3xl shadow-xl text-center"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+      >
+        <h1 className="text-5xl sm:text-6xl font-extrabold text-blue-900 mb-6 leading-tight">
+          Welcome to <span className="text-purple-700">Your Company</span>
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-800 max-w-xl mx-auto mb-10">
+          Begin your onboarding journey or explore helpful resources designed to support your work.
         </p>
 
-        {/* Links */}
         <div className="flex flex-col sm:flex-row gap-6 justify-center">
           <a
             href="/onboarding"
-            className="inline-block bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg hover:bg-blue-700 transition-colors duration-300 shadow-md"
+            className="bg-white hover:bg-gray-100 text-blue-900 font-semibold py-3 px-8 rounded-full text-lg shadow-lg transition"
           >
-            Start Onboarding
+            🚀 Start Onboarding
           </a>
           <a
             href="/employees"
-            className="inline-block bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-300 transition-colors duration-300 shadow-md"
+            className="bg-white hover:bg-gray-100 text-blue-900 font-semibold py-3 px-8 rounded-full text-lg shadow border transition"
           >
-            Employee Resources
+            📁 Employee Resources
           </a>
         </div>
-      </main>
+      </motion.div>
 
-      {/* Footer - You can customize or remove this if not needed for the welcome page */}
-      {/* Keeping a simple footer as a placeholder, modify as per your Next.js project's needs */}
-      <footer className="relative z-10 mt-10 text-gray-600 text-sm">
-        <p>&copy; {new Date().getFullYear()} Your Company. All rights reserved.</p>
+      {/* Footer */}
+      <footer className="absolute bottom-5 text-gray-500 text-sm z-10">
+        &copy; {new Date().getFullYear()} Your Company. All rights reserved.
       </footer>
     </div>
   );
