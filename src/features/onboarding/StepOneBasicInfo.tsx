@@ -95,7 +95,7 @@ export default function StepOneBasicInfo({ setIsStepValid }: StepProps) {
                     rules={{
                         required:'Phone Number is required',
                         pattern:{
-                            value: /^\+91\s\d{10}$/,
+                            value: /^(?:\+91[-\s]?|0)?[6-9]\d{9}$/ ,
                             message:'Invalid phone number',
                         },
                     }}

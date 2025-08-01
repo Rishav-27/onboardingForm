@@ -19,7 +19,7 @@ export interface OnboardingStoreState {
   prevStep: () => void;
   updateOnboardingData: (newData: Partial<OnboardingData>) => void;
   resetOnboarding: () => void;
-  onboardComplete: () => void;
+ 
 }
 
 const initialOnboardingData: OnboardingData = {
@@ -44,5 +44,5 @@ export const useOnboardingStore = create<OnboardingStoreState>((set) => ({
       onboardingData: { ...state.onboardingData, ...newData },
     })),
   resetOnboarding: () => set({ currentStep: 1, onboardingData: initialOnboardingData }),
-   onboardComplete: () => set({ currentStep: 4, onboardingData: initialOnboardingData }),
+   
 }));
