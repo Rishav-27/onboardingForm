@@ -37,31 +37,11 @@ export default function OnboardingForm() {
     prevStep();
   };
 
-  // const handleSubmitAll = () => {
-  //   console.log("Final Onboarding Data:", onboardingData);
-  //   let employees:OnboardingData[]=[];
-  //   if(typeof window !== 'undefined'){
-  //     const storedEmployees = localStorage.getItem('employees');
-  //     try{
-  //       employees =storedEmployees ? JSON.parse(storedEmployees):[];
-  //     }catch (e){
-  //       console.error("Failed to parse existing employees from localStorage:",e);
-  //       employees = [];
-  //     }
-  //   }
-
-  //   const updatedEmployees = [...employees, onboardingData as OnboardingData  ];
-
-  //   if (typeof window !== 'undefined'){
-  //     localStorage.setItem('employees',JSON.stringify(updatedEmployees));
-  //   }
-  //   toast.success("Employee Onboarding Complete! Redirecting to profile.", { position: 'top-center' });
-  //   //resetOnboarding();
-  //   router.push('/profile');
-  // };
-
   const handleSubmitAll = async () => {
-    console.log("Final Onboaring Data:", onboardingData);
+    // Exclude the 'confirmPassword' field from the data sent to the API
+    const { confirmPassword, ...onboardingDataToSend } = onboardingData;
+
+    console.log("Final Onboarding Data:", onboardingDataToSend);
 
     try {
       const response = await fetch("/api/employees", {
@@ -69,7 +49,8 @@ export default function OnboardingForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(onboardingData),
+        // Send the new object, which now includes the client-generated employeeId, to the API
+        body: JSON.stringify(onboardingDataToSend),
       });
 
       if (!response.ok) {
@@ -83,6 +64,8 @@ export default function OnboardingForm() {
       toast.success("Employee Onboarding Complete! Redirecting to profile.", {
         position: "bottom-right",
       });
+      // Optionally reset the store after a successful submission
+      //resetOnboarding();
       router.push("/profile");
     } catch (error: unknown) {
       const err = error as Error;

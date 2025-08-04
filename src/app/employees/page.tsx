@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -11,14 +12,35 @@ import {
 } from "@/components/ui/table";
 import { OnboardingData } from "@/features/onboarding/useOnboardingStore";
 import { Button } from "@/components/ui/button";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
 import toast from "react-hot-toast";
 
+// Helper function to convert snake_case to camelCase without type errors
+function toCamelCase<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => toCamelCase(item)) as T;
+  }
+
+  const newObj = {} as T;
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const camelCaseKey = key.replace(/_([a-z])/g, (_, char) => char.toUpperCase());
+      newObj[camelCaseKey as keyof T] = toCamelCase(obj[key]);
+    }
+  }
+  return newObj;
+}
+
 export default function EmployeesPage() {
+  const router = useRouter();
   const [employees, setEmployees] = useState<OnboardingData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +56,10 @@ export default function EmployeesPage() {
         throw new Error(errorData.error || "Failed to fetch employees.");
       }
 
-      const data: OnboardingData[] = await response.json();
-      setEmployees(data);
+      const data = await response.json();
+      // Transform the data from snake_case to camelCase before setting state
+      const camelCaseData: OnboardingData[] = toCamelCase(data);
+      setEmployees(camelCaseData);
     } catch (error: unknown) {
       const err = error as Error;
       console.error("Error fetching employees:", err);
@@ -45,6 +69,7 @@ export default function EmployeesPage() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchEmployees();
   }, []);
@@ -78,16 +103,17 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleEditEmployee = (employee: OnboardingData)=>{
-    setEditingEmployee({ ...employee});
+  const handleEditEmployee = (employee: OnboardingData) => {
+    // Clear password fields for security
+    setEditingEmployee({ ...employee, password: '', confirmPassword: ''});
   };
 
   const handleCancelEdit = () => {
     setEditingEmployee(null);
   };
 
-  const handleUpdateChange = (e: React.ChangeEvent<HTMLInputElement>) =>{
-    if (editingEmployee){
+  const handleUpdateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (editingEmployee) {
       setEditingEmployee({
         ...editingEmployee,
         [e.target.name]: e.target.value,
@@ -95,8 +121,8 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleSelectChange = (name: string, value: string)=>{
-    if (editingEmployee){
+  const handleSelectChange = (name: string, value: string) => {
+    if (editingEmployee) {
       setEditingEmployee({
         ...editingEmployee,
         [name]: value,
@@ -104,21 +130,21 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleUpdateSubmit = async (e: React.FormEvent)=>{
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEmployee)
       return;
 
-    try{
-      const response = await fetch ('/api/employees',{
+    try {
+      const response = await fetch('/api/employees', {
         method: 'PUT',
-        headers:{
-          'Content-Type':'application/json',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        body:JSON.stringify(editingEmployee),
+        body: JSON.stringify(editingEmployee),
       });
 
-      if(!response.ok){
+      if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update employee.');
       }
@@ -126,9 +152,9 @@ export default function EmployeesPage() {
       toast.success("Employee updated successfully!");
       setEditingEmployee(null);
       await fetchEmployees();
-    }catch (e){
-      console.error("Error updating employee:",e);
-      const errorMessage = e instanceof Error ? e.message: 'An unknown error occurred while updating the employee.';
+    } catch (e) {
+      console.error("Error updating employee:", e);
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred while updating the employee.';
       toast.error(`Error: ${errorMessage}`);
     }
   };
@@ -150,8 +176,8 @@ export default function EmployeesPage() {
     );
   }
 
-  if(editingEmployee){
-    return(
+  if (editingEmployee) {
+    return (
       <div className="container mx-auto p-8">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
@@ -161,13 +187,13 @@ export default function EmployeesPage() {
             <CardContent className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label htmlFor="fullName">Full Name</label>
+                  <Label htmlFor="fullName">Full Name</Label>
                   <Input
-                    id="FullName"
+                    id="fullName"
                     name="fullName"
                     value={editingEmployee.fullName}
                     onChange={handleUpdateChange}
-                    />
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="email">Email</Label>
@@ -177,7 +203,7 @@ export default function EmployeesPage() {
                     type="email"
                     value={editingEmployee.email}
                     onChange={handleUpdateChange}
-                    />
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -188,7 +214,7 @@ export default function EmployeesPage() {
                     name="phoneNumber"
                     value={editingEmployee.phoneNumber}
                     onChange={handleUpdateChange}
-                    />
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="employeeId">Employee ID</Label>
@@ -197,7 +223,7 @@ export default function EmployeesPage() {
                     name="employeeId"
                     value={editingEmployee.employeeId}
                     disabled
-                    />
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -205,16 +231,18 @@ export default function EmployeesPage() {
                   <Label htmlFor="department">Department</Label>
                   <Select
                     value={editingEmployee.department}
-                    onValueChange={(val) => handleSelectChange('department',val)}
-                    >
+                    onValueChange={(val) => handleSelectChange('department', val)}
+                  >
                     <SelectTrigger id="department">
-                      <SelectValue placeholder="Select a department"/>
+                      <SelectValue placeholder="Select a department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Human Resources">Human Resources</SelectItem>
                       <SelectItem value="Engineering">Engineering</SelectItem>
                       <SelectItem value="Marketing">Marketing</SelectItem>
                       <SelectItem value="Sales">Sales</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -225,7 +253,7 @@ export default function EmployeesPage() {
                     name="role"
                     value={editingEmployee.role}
                     onChange={handleUpdateChange}
-                    />
+                  />
                 </div>
               </div>
               <div>
@@ -236,7 +264,7 @@ export default function EmployeesPage() {
                   type="date"
                   value={editingEmployee.dateOfJoining}
                   onChange={handleUpdateChange}
-                  />
+                />
               </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
@@ -248,14 +276,20 @@ export default function EmployeesPage() {
           </form>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">
-        Onboarded Employees
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">
+          Onboarded Employees
+        </h1>
+        <Button onClick={() => router.push('/onboarding')} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Employee
+        </Button>
+      </div>
       {employees.length === 0 ? (
         <p className="text-center text-gray-500">
           No employees onboarded yet. Please use the onboarding form to add new
@@ -274,12 +308,11 @@ export default function EmployeesPage() {
                 <TableHead>Department</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Date Joined</TableHead>
-
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((employee: OnboardingData, index: number) => (
+              {employees.map((employee, index) => (
                 <TableRow key={employee.employeeId || index}>
                   <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell>{employee.employeeId || "-"}</TableCell>
@@ -296,15 +329,16 @@ export default function EmployeesPage() {
                       variant="ghost"
                       size="sm"
                       className="mr-2"
-                      onClick={() => handleEditEmployee(employee)}
+                      // Use a safe check to ensure employeeId exists before calling handleEditEmployee
+                      onClick={() => employee.employeeId && handleEditEmployee(employee)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    {/* Delete Button */}
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDeleteEmployee(employee.employeeId!)}
+                      // Use a safe check to ensure employeeId exists before calling handleDeleteEmployee
+                      onClick={() => employee.employeeId && handleDeleteEmployee(employee.employeeId)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

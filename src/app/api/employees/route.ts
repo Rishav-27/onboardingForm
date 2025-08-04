@@ -1,12 +1,21 @@
-// app/api/employees/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@vercel/postgres';
+import { createClient } from '@supabase/supabase-js';
 import { OnboardingData } from '@/features/onboarding/useOnboardingStore';
+import bcrypt from 'bcrypt';
+
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const { rows } = await db.query('SELECT * FROM employees');
-    return NextResponse.json(rows, { status: 200 });
+    const { data: employees, error } = await supabase.from('employees').select('*');
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return NextResponse.json(employees, { status: 200 });
   } catch (error) {
     const err = error as Error;
     return NextResponse.json(
@@ -20,38 +29,40 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const newEmployeeData: OnboardingData = await req.json();
 
-    if (!newEmployeeData || !newEmployeeData.fullName || !newEmployeeData.email) {
+    // Check for all required fields, including the client-generated employeeId
+    if (!newEmployeeData || !newEmployeeData.employeeId || !newEmployeeData.fullName || !newEmployeeData.email || !newEmployeeData.password) {
       return NextResponse.json(
         { error: 'Missing required employee data' },
         { status: 400 }
       );
     }
+    
+    // Hash the password for security
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newEmployeeData.password, saltRounds);
 
-    const employeeId = `emp-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Map the camelCase fields from the client to snake_case for the database
+    const employeeToInsert = {
+      employee_id: newEmployeeData.employeeId,
+      full_name: newEmployeeData.fullName,
+      email: newEmployeeData.email,
+      phone_number: newEmployeeData.phoneNumber,
+      department: newEmployeeData.department,
+      role: newEmployeeData.role,
+      date_of_joining: newEmployeeData.dateOfJoining,
+      password: hashedPassword,
+    };
 
-    await db.query(
-      `INSERT INTO employees (
-        "employeeId", 
-        "fullName", 
-        "email", 
-        "phoneNumber", 
-        "department", 
-        "role", 
-        "dateOfJoining"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [
-        employeeId,
-        newEmployeeData.fullName,
-        newEmployeeData.email,
-        newEmployeeData.phoneNumber,
-        newEmployeeData.department,
-        newEmployeeData.role,
-        newEmployeeData.dateOfJoining,
-      ]
-    );
+    const { error } = await supabase
+      .from('employees')
+      .insert(employeeToInsert);
+
+    if (error) {
+      throw new Error(error.message);
+    }
 
     return NextResponse.json(
-      { message: 'Employee added successfully', employee: { ...newEmployeeData, employeeId } },
+      { message: 'Employee added successfully', employee: { ...employeeToInsert, password: '***' } },
       { status: 201 }
     );
   } catch (error) {
@@ -72,10 +83,13 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Employee ID is required' }, { status: 400 });
     }
 
-    const { rowCount } = await db.query('DELETE FROM employees WHERE "employeeId" = $1', [employeeId]);
-
-    if (rowCount === 0) {
-      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+    const { error, count } = await supabase
+      .from('employees')
+      .delete()
+      .eq('employee_id', employeeId);
+      
+    if (error || count === 0) {
+      return NextResponse.json({ error: 'Employee not found or already deleted' }, { status: 404 });
     }
 
     return NextResponse.json({ message: 'Employee deleted successfully' }, { status: 200 });
@@ -96,26 +110,33 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Employee ID is required for update' }, { status: 400 });
     }
 
-    const { rowCount } = await db.query(
-      `UPDATE employees
-       SET "fullName" = $1, "email" = $2, "phoneNumber" = $3, "department" = $4, "role" = $5, "dateOfJoining" = $6
-       WHERE "employeeId" = $7`,
-      [
-        updatedEmployeeData.fullName,
-        updatedEmployeeData.email,
-        updatedEmployeeData.phoneNumber,
-        updatedEmployeeData.department,
-        updatedEmployeeData.role,
-        updatedEmployeeData.dateOfJoining,
-        updatedEmployeeData.employeeId,
-      ]
-    );
+    // Prepare the update object
+    const employeeToUpdate: { [key: string]: unknown } = {
+      full_name: updatedEmployeeData.fullName,
+      email: updatedEmployeeData.email,
+      phone_number: updatedEmployeeData.phoneNumber,
+      department: updatedEmployeeData.department,
+      role: updatedEmployeeData.role,
+      date_of_joining: updatedEmployeeData.dateOfJoining,
+    };
+    
+    // Conditionally hash and update the password only if a new one is provided
+    if (updatedEmployeeData.password && updatedEmployeeData.password.length > 0) {
+        const saltRounds = 10;
+        employeeToUpdate.password = await bcrypt.hash(updatedEmployeeData.password, saltRounds);
+    }
 
-    if (rowCount === 0) {
+    const { data: updatedData, error } = await supabase
+      .from('employees')
+      .update(employeeToUpdate)
+      .eq('employee_id', updatedEmployeeData.employeeId)
+      .select();
+
+    if (error || !updatedData?.length) {
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Employee updated successfully', employee: updatedEmployeeData }, { status: 200 });
+    return NextResponse.json({ message: 'Employee updated successfully', employee: updatedData[0] }, { status: 200 });
   } catch (error) {
     const err = error as Error;
     return NextResponse.json(

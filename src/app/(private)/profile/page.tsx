@@ -1,10 +1,12 @@
 'use client';
 
-import React, { JSX } from 'react';
+import React from 'react';
 import { useOnboardingStore } from '@/features/onboarding/useOnboardingStore';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Mail, Phone, Briefcase, Calendar, User, Building, Plus, List } from 'lucide-react';
+import { JSX } from 'react/jsx-runtime';
 
 export default function ProfilePage(): JSX.Element {
   const { onboardingData, resetOnboarding } = useOnboardingStore();
@@ -15,58 +17,70 @@ export default function ProfilePage(): JSX.Element {
     router.push('/onboarding');
   };
 
+  const DetailItem = ({ label, value, icon: Icon }: { label: string; value: string | undefined; icon: React.ElementType }) => (
+    <div className="flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 ease-in-out hover:bg-gray-100">
+      <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+      <div className="flex flex-col">
+        <span className="text-sm font-medium text-gray-600">{label}</span>
+        <span className="text-base font-semibold text-gray-900">{value || 'N/A'}</span>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 sm:p-6 lg:p-8">
-      <Card className="w-full max-w-3xl mx-auto shadow-xl rounded-lg overflow-hidden">
-        <CardHeader className="text-center pb-6 border-b border-gray-200">
-          <CardTitle className="text-3xl font-extrabold text-gray-900">
-            Employee Profile Details
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-4xl mx-auto shadow-xl rounded-xl overflow-hidden">
+        <CardHeader className="bg-white text-center">
+          <User className="h-8 w-8 mx-auto text-blue-600 mb-1" />
+          <CardTitle className="text-2xl font-extrabold tracking-tight text-gray-900">
+            {onboardingData.fullName || 'Employee Profile'}
           </CardTitle>
-          <CardDescription className="text-gray-600 mt-2">
-            Here are the details you provided during the onboarding process.
+          <CardDescription className="text-gray-600 mt-1 text-sm max-w-lg mx-auto">
+            A detailed overview of the information submitted during the employee onboarding process.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-6 space-y-6 bg-gray-50">
           {onboardingData.fullName ? (
-            <>
+            <div className="p-4 bg-white rounded-lg shadow-md space-y-4">
+              <div className="flex items-center space-x-2 border-b pb-2">
+                <span className="text-base font-semibold text-blue-600">Employee ID:</span>
+                <span className="text-base font-bold text-gray-900">{onboardingData.employeeId}</span>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-700">Basic Information</h3>
-                  <p><strong>Full Name:</strong> {onboardingData.fullName}</p>
-                  <p><strong>Email:</strong> {onboardingData.email}</p>
-                  <p><strong>Phone Number:</strong> {onboardingData.phoneNumber}</p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-700">Job Details</h3>
-                  <p><strong>Department:</strong> {onboardingData.department}</p>
-                  <p><strong>Role:</strong> {onboardingData.role}</p>
-                  <p><strong>Date of Joining:</strong> {onboardingData.dateOfJoining}</p>
-                </div>
+                <DetailItem label="Full Name" value={onboardingData.fullName} icon={User} />
+                <DetailItem label="Email Address" value={onboardingData.email} icon={Mail} />
+                <DetailItem label="Phone Number" value={onboardingData.phoneNumber} icon={Phone} />
+                <DetailItem label="Department" value={onboardingData.department} icon={Building} />
+                <DetailItem label="Role" value={onboardingData.role} icon={Briefcase} />
+                <DetailItem label="Date of Joining" value={onboardingData.dateOfJoining} icon={Calendar} />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700">Account Information</h3>
-                <p><strong>Employee ID:</strong> {onboardingData.employeeId || 'N/A'}</p>
-                <p className="text-sm text-gray-500">
-                  Password is set and secured.
-                </p>
-              </div>
-            </>
+            </div>
           ) : (
-            <p className="text-center text-gray-600 text-lg">
+            <p className="text-center text-gray-600 text-lg py-8">
               No profile data available. Please complete the onboarding process.
             </p>
           )}
         </CardContent>
 
-        <div className="px-6 py-4 flex justify-center bg-gray-50 border-t border-gray-200">
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 p-4 bg-white border-t border-gray-200">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/employees')}
+            className="w-full sm:w-auto"
+          >
+            <List className="h-4 w-4 mr-2" />
+            Go to Employee List
+          </Button>
           <Button
             onClick={handleStartNewOnboarding}
-            className="px-8 py-2 text-lg bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full sm:w-auto"
           >
+            <Plus className="h-4 w-4 mr-2" />
             Start New Onboarding
           </Button>
-        </div>
+        </CardFooter>
       </Card>
     </div>
   );
