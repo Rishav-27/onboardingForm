@@ -23,9 +23,7 @@ const departmentPrefixes: { [key: string]: string } = {
 };
 
 export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
-    const { onboardingData, updateOnboardingData } = useOnboardingStore();
-    // This is the key change: determine if we are editing or creating a new employee
-    const isEditing = !!onboardingData.employeeId;
+    const { onboardingData, updateOnboardingData, isEditingMode } = useOnboardingStore();
 
     type StepThreeFormData = Pick<OnboardingData, 'password' | 'confirmPassword'>;
 
@@ -77,14 +75,13 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
     }, [currentDepartment, dateOfJoining, updateOnboardingData]);
 
     useEffect(() => {
-        // The fix is here: only generate an ID if we are NOT in editing mode.
-        // This ensures the ID remains unchanged when an existing employee's data is modified.
-        if (!isEditing && currentDepartment && dateOfJoining && !onboardingData.employeeId) {
+        // Use the new isEditingMode flag to determine if an ID should be generated
+        if (!isEditingMode && currentDepartment && dateOfJoining && !onboardingData.employeeId) {
             generateEmployeeIdStable();
-        } else if (!isEditing && (!currentDepartment || !dateOfJoining) && onboardingData.employeeId) {
+        } else if (!isEditingMode && (!currentDepartment || !dateOfJoining) && onboardingData.employeeId) {
             updateOnboardingData({ employeeId: '' });
         }
-    }, [currentDepartment, dateOfJoining, onboardingData.employeeId, updateOnboardingData, generateEmployeeIdStable, isEditing]);
+    }, [currentDepartment, dateOfJoining, onboardingData.employeeId, updateOnboardingData, generateEmployeeIdStable, isEditingMode]);
 
     useEffect(() => {
         updateOnboardingData({
@@ -106,9 +103,8 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     <FormLabel>Employee ID</FormLabel>
                     <FormControl>
                         <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground shadow-sm items-center">
-                            {/* Display the employee ID differently based on whether we are editing */}
-                            {isEditing 
-                                ? onboardingData.employeeId 
+                            {isEditingMode // Use the new flag here too
+                                ? onboardingData.employeeId
                                 : onboardingData.employeeId || (currentDepartment && dateOfJoining ? 'Generating ID...' : 'Please fill in Department and Date of Joining in previous step.')
                             }
                         </div>
@@ -120,8 +116,8 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     control={control}
                     name="password"
                     rules={{
-                        // No password validation if editing, because the user might not be changing it
-                        required: !isEditing ? 'Password is required' : false,
+                        // Password is only required for new employees
+                        required: !isEditingMode ? 'Password is required' : false,
                         minLength: {
                             value: 8,
                             message: 'Password must be at least 8 characters.',
@@ -146,10 +142,16 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     control={control}
                     name="confirmPassword"
                     rules={{
-                        // No confirm password validation if editing and no new password is entered
-                        required: !isEditing ? 'Confirm Password is required' : false,
-                        validate: (value) =>
-                            value === getValues('password') || 'Passwords do not match.',
+                        // This validation handles both 'required' and 'match' logic
+                        validate: (value) => {
+                            const passwordValue = getValues('password');
+                            // If a new password has been entered, the confirm field must match it.
+                            if (passwordValue) {
+                                return value === passwordValue || 'Passwords do not match.';
+                            }
+                            // If no new password is being set, the field is optional and considered valid.
+                            return true;
+                        },
                     }}
                     render={({ field }) => (
                         <FormItem>

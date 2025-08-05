@@ -1,48 +1,52 @@
 import { create } from 'zustand';
 
 export interface OnboardingData {
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  department: string;
-  role: string;
-  dateOfJoining: string;
-  employeeId: string;
-  password?: string;
-  confirmPassword?: string;
+  full_name: string;
+  email: string;
+  phone_number: string;
+  department: string;
+  role: string;
+  date_of_joining: string;
+  employee_id: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 export interface OnboardingStoreState {
-  currentStep: number;
-  onboardingData: OnboardingData;
-  nextStep: () => void;
-  prevStep: () => void;
-  updateOnboardingData: (newData: Partial<OnboardingData>) => void;
-  resetOnboarding: () => void;
-  setOnboardingData: (data: OnboardingData) => void;
+  currentStep: number;
+  onboardingData: OnboardingData;
+  isEditingMode: boolean; // NEW: Explicit flag for editing mode
+  nextStep: () => void;
+  prevStep: () => void;
+  updateOnboardingData: (newData: Partial<OnboardingData>) => void;
+  resetOnboarding: () => void;
+  setOnboardingData: (data: OnboardingData) => void;
+  setEditingMode: (isEditing: boolean) => void; // NEW: Action to set the flag
 }
 
 const initialOnboardingData: OnboardingData = {
-  fullName: '',
-  email: '',
-  phoneNumber: '',
-  department: '',
-  role: '',
-  dateOfJoining: '',
-  employeeId: '',
-  password: '',
-  confirmPassword: '',
+  full_name: '',
+  email: '',
+  phone_number: '',
+  department: '',
+  role: '',
+  date_of_joining: '',
+  employee_id: '',
+  password: '',
+  confirmPassword: '',
 };
 
 export const useOnboardingStore = create<OnboardingStoreState>((set) => ({
-  currentStep: 1,
-  onboardingData: initialOnboardingData,
-  setOnboardingData: (data) => set({ onboardingData: data }),
-  nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
-  prevStep: () => set((state) => ({ currentStep: state.currentStep - 1 })),
-  updateOnboardingData: (newData) =>
-    set((state) => ({
-      onboardingData: { ...state.onboardingData, ...newData },
-    })),
-  resetOnboarding: () => set({ currentStep: 1, onboardingData: initialOnboardingData }),
+  currentStep: 1,
+  onboardingData: initialOnboardingData,
+  isEditingMode: false, 
+  setOnboardingData: (data) => set({ onboardingData: data }),
+  nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
+  prevStep: () => set((state) => ({ currentStep: state.currentStep - 1 })),
+  updateOnboardingData: (newData) =>
+    set((state) => ({
+      onboardingData: { ...state.onboardingData, ...newData },
+    })),
+  resetOnboarding: () => set({ currentStep: 1, onboardingData: initialOnboardingData }),
+  setEditingMode: (isEditing) => set({ isEditingMode: isEditing }), // NEW: Set the flag
 }));
