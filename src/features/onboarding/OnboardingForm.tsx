@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useOnboardingStore, OnboardingData } from "./useOnboardingStore";
+import { useOnboardingStore } from "./useOnboardingStore";
 import { useRouter } from "next/navigation";
 import StepOneBasicInfo from "./StepOneBasicInfo";
 import StepTwoJobDetails from "./StepTwoJobDetails";
@@ -16,9 +16,19 @@ export default function OnboardingForm() {
   const [isStepValid, setIsStepValid] = useState(false);
   const router = useRouter();
 
+  // Determine if we are in "edit" mode based on the presence of an employeeId
+  const isEditing = !!onboardingData.employeeId;
+
   useEffect(() => {
     setIsStepValid(false);
   }, [currentStep]);
+
+  // If we are adding a new employee, make sure to reset the store when the component mounts
+  useEffect(() => {
+    if (!isEditing) {
+      resetOnboarding();
+    }
+  }, [isEditing, resetOnboarding]);
 
   const handleNext = () => {
     if (isStepValid) {
@@ -38,39 +48,39 @@ export default function OnboardingForm() {
   };
 
   const handleSubmitAll = async () => {
-    // Exclude the 'confirmPassword' field from the data sent to the API
+    // Exclude the 'confirmPassword' field
     const { confirmPassword, ...onboardingDataToSend } = onboardingData;
 
-    console.log("Final Onboarding Data:", onboardingDataToSend);
-
     try {
-      const response = await fetch("/api/employees", {
-        method: "POST",
+      // Determine API method based on whether we are editing or adding
+      const method = isEditing ? "PUT" : "POST";
+      const apiEndpoint = "/api/employees";
+
+      const response = await fetch(apiEndpoint, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
         },
-        // Send the new object, which now includes the client-generated employeeId, to the API
         body: JSON.stringify(onboardingDataToSend),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add employee.");
+        throw new Error(errorData.error || `Failed to ${isEditing ? "update" : "add"} employee.`);
       }
 
       const result = await response.json();
-      console.log("Employee added successfully:", result.employee);
+      console.log(`Employee ${isEditing ? "updated" : "added"} successfully:`, result.employee);
 
-      toast.success("Employee Onboarding Complete! Redirecting to profile.", {
+      toast.success(`Employee ${isEditing ? "updated" : "onboarding complete"}! Redirecting...`, {
         position: "bottom-right",
       });
-      // Optionally reset the store after a successful submission
-      //resetOnboarding();
-      router.push("/profile");
+
+      router.push("/employees");
     } catch (error: unknown) {
       const err = error as Error;
-      console.error("Error submitting onboarding data:", err);
-      toast.error(`Error: ${err.message || "Could not complete onboarding."}`, {
+      console.error(`Error submitting data:`, err);
+      toast.error(`Error: ${err.message || "Could not complete the action."}`, {
         position: "bottom-right",
       });
     }
@@ -89,6 +99,9 @@ export default function OnboardingForm() {
     }
   };
 
+  const pageTitle = isEditing ? "Edit Employee Details" : "New Employee Onboarding";
+  const submitButtonText = isEditing ? "Save Changes" : "Submit All";
+
   return (
     <div className="w-full max-w-5xl mx-auto p-10 border rounded-lg shadow-lg bg-white relative">
       {currentStep > 1 && (
@@ -101,7 +114,7 @@ export default function OnboardingForm() {
       )}
 
       <h2 className="text-2xl font-bold mb-6 text-center mt-8">
-        New Employee Onboarding ({currentStep} of 3)
+        {pageTitle} ({currentStep} of 3)
       </h2>
       <div className="flex justify-between mb-8">
         <div
@@ -141,7 +154,7 @@ export default function OnboardingForm() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.3 }}
-            className="absolute w-full flex justify-center "
+            className="absolute w-full flex justify-center"
           >
             {renderStep()}
           </motion.div>
@@ -171,7 +184,7 @@ export default function OnboardingForm() {
                 : "bg-gray-400 text-gray-700 cursor-not-allowed"
             }`}
           >
-            Submit All <ArrowRight className="h-4 w-4" />
+            {submitButtonText} <ArrowRight className="h-4 w-4" />
           </button>
         )}
       </div>

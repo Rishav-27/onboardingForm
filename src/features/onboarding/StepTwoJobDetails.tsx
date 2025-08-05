@@ -54,6 +54,9 @@ const roles = [
 export default function StepTwoJobDetails({ setIsStepValid }: StepProps) {
   const { onboardingData, updateOnboardingData } = useOnboardingStore();
 
+  // Add this line to determine if we are in edit mode
+  const isEditing = !!onboardingData.employeeId;
+
   type StepTwoFormData = Pick<
     OnboardingData,
     "department" | "role" | "dateOfJoining"
@@ -106,7 +109,7 @@ export default function StepTwoJobDetails({ setIsStepValid }: StepProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} >
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEditing}>
                 <FormControl>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a department " />

@@ -8,8 +8,8 @@ export interface OnboardingData {
   role: string;
   dateOfJoining: string;
   employeeId: string;
-  password: string;
-  confirmPassword: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 export interface OnboardingStoreState {
@@ -19,7 +19,7 @@ export interface OnboardingStoreState {
   prevStep: () => void;
   updateOnboardingData: (newData: Partial<OnboardingData>) => void;
   resetOnboarding: () => void;
- 
+  setOnboardingData: (data: OnboardingData) => void;
 }
 
 const initialOnboardingData: OnboardingData = {
@@ -37,12 +37,12 @@ const initialOnboardingData: OnboardingData = {
 export const useOnboardingStore = create<OnboardingStoreState>((set) => ({
   currentStep: 1,
   onboardingData: initialOnboardingData,
-  nextStep: () => set((state: OnboardingStoreState) => ({ currentStep: state.currentStep + 1 })),
-  prevStep: () => set((state: OnboardingStoreState) => ({ currentStep: state.currentStep - 1 })),
+  setOnboardingData: (data) => set({ onboardingData: data }),
+  nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
+  prevStep: () => set((state) => ({ currentStep: state.currentStep - 1 })),
   updateOnboardingData: (newData) =>
-    set((state: OnboardingStoreState) => ({
+    set((state) => ({
       onboardingData: { ...state.onboardingData, ...newData },
     })),
   resetOnboarding: () => set({ currentStep: 1, onboardingData: initialOnboardingData }),
-   
 }));

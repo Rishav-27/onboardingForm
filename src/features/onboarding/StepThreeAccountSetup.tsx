@@ -24,6 +24,8 @@ const departmentPrefixes: { [key: string]: string } = {
 
 export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
     const { onboardingData, updateOnboardingData } = useOnboardingStore();
+    // This is the key change: determine if we are editing or creating a new employee
+    const isEditing = !!onboardingData.employeeId;
 
     type StepThreeFormData = Pick<OnboardingData, 'password' | 'confirmPassword'>;
 
@@ -75,22 +77,14 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
     }, [currentDepartment, dateOfJoining, updateOnboardingData]);
 
     useEffect(() => {
-        let expectedPrefix = '';
-        if (currentDepartment) {
-            expectedPrefix = departmentPrefixes[currentDepartment] || departmentPrefixes['Default'];
-        }
-        const expectedYear = dateOfJoining ? format(new Date(dateOfJoining), 'yy') : '';
-
-        const isCurrentIdConsistent = onboardingData.employeeId &&
-                                      onboardingData.employeeId.startsWith(expectedYear + expectedPrefix);
-
-        if (currentDepartment && dateOfJoining && (!onboardingData.employeeId || !isCurrentIdConsistent)) {
+        // The fix is here: only generate an ID if we are NOT in editing mode.
+        // This ensures the ID remains unchanged when an existing employee's data is modified.
+        if (!isEditing && currentDepartment && dateOfJoining && !onboardingData.employeeId) {
             generateEmployeeIdStable();
-        }
-        else if ((!currentDepartment || !dateOfJoining) && onboardingData.employeeId) {
+        } else if (!isEditing && (!currentDepartment || !dateOfJoining) && onboardingData.employeeId) {
             updateOnboardingData({ employeeId: '' });
         }
-    }, [currentDepartment, dateOfJoining, onboardingData.employeeId, updateOnboardingData, generateEmployeeIdStable]);
+    }, [currentDepartment, dateOfJoining, onboardingData.employeeId, updateOnboardingData, generateEmployeeIdStable, isEditing]);
 
     useEffect(() => {
         updateOnboardingData({
@@ -100,6 +94,7 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
     }, [password, confirmPassword, updateOnboardingData]);
 
     useEffect(() => {
+        // The step is valid if the form is valid and an employeeId exists
         const isStepCompletelyValid = isValid && !!onboardingData.employeeId;
         setIsStepValid(isStepCompletelyValid);
     }, [isValid, onboardingData.employeeId, setIsStepValid]);
@@ -111,7 +106,11 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     <FormLabel>Employee ID</FormLabel>
                     <FormControl>
                         <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground shadow-sm items-center">
-                            {onboardingData.employeeId || (currentDepartment && dateOfJoining ? 'Generating ID...' : 'Please fill in Department and Date of Joining in previous step.')}
+                            {/* Display the employee ID differently based on whether we are editing */}
+                            {isEditing 
+                                ? onboardingData.employeeId 
+                                : onboardingData.employeeId || (currentDepartment && dateOfJoining ? 'Generating ID...' : 'Please fill in Department and Date of Joining in previous step.')
+                            }
                         </div>
                     </FormControl>
                     <FormMessage />
@@ -121,7 +120,8 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     control={control}
                     name="password"
                     rules={{
-                        required: 'Password is required',
+                        // No password validation if editing, because the user might not be changing it
+                        required: !isEditing ? 'Password is required' : false,
                         minLength: {
                             value: 8,
                             message: 'Password must be at least 8 characters.',
@@ -146,7 +146,8 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     control={control}
                     name="confirmPassword"
                     rules={{
-                        required: 'Confirm Password is required',
+                        // No confirm password validation if editing and no new password is entered
+                        required: !isEditing ? 'Confirm Password is required' : false,
                         validate: (value) =>
                             value === getValues('password') || 'Passwords do not match.',
                     }}

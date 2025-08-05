@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { OnboardingData } from '@/features/onboarding/useOnboardingStore';
-import bcrypt from 'bcrypt';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { OnboardingData } from "@/features/onboarding/useOnboardingStore";
+import bcrypt from "bcrypt";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -9,7 +9,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const { data: employees, error } = await supabase.from('employees').select('*');
+    const { data: employees, error } = await supabase
+      .from("employees")
+      .select("*");
 
     if (error) {
       throw new Error(error.message);
@@ -19,7 +21,7 @@ export async function GET(): Promise<NextResponse> {
   } catch (error) {
     const err = error as Error;
     return NextResponse.json(
-      { error: 'Failed to fetch employees: ' + err.message },
+      { error: "Failed to fetch employees: " + err.message },
       { status: 500 }
     );
   }
@@ -29,19 +31,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const newEmployeeData: OnboardingData = await req.json();
 
-    // Check for all required fields, including the client-generated employeeId
-    if (!newEmployeeData || !newEmployeeData.employeeId || !newEmployeeData.fullName || !newEmployeeData.email || !newEmployeeData.password) {
+    if (
+      !newEmployeeData ||
+      !newEmployeeData.employeeId ||
+      !newEmployeeData.fullName ||
+      !newEmployeeData.email ||
+      !newEmployeeData.password
+    ) {
       return NextResponse.json(
-        { error: 'Missing required employee data' },
+        { error: "Missing required employee data" },
         { status: 400 }
       );
     }
-    
-    // Hash the password for security
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(newEmployeeData.password, saltRounds);
 
-    // Map the camelCase fields from the client to snake_case for the database
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(
+      newEmployeeData.password,
+      saltRounds
+    );
+
     const employeeToInsert = {
       employee_id: newEmployeeData.employeeId,
       full_name: newEmployeeData.fullName,
@@ -53,22 +61,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       password: hashedPassword,
     };
 
-    const { error } = await supabase
-      .from('employees')
-      .insert(employeeToInsert);
+    const { error } = await supabase.from("employees").insert(employeeToInsert);
 
     if (error) {
       throw new Error(error.message);
     }
 
     return NextResponse.json(
-      { message: 'Employee added successfully', employee: { ...employeeToInsert, password: '***' } },
+      {
+        message: "Employee added successfully",
+        employee: { ...employeeToInsert, password: "***" },
+      },
       { status: 201 }
     );
   } catch (error) {
     const err = error as Error;
     return NextResponse.json(
-      { error: 'Failed to add employee: ' + err.message },
+      { error: "Failed to add employee: " + err.message },
       { status: 500 }
     );
   }
@@ -77,26 +86,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(req.url);
-    const employeeId = searchParams.get('id');
+    const employeeId = searchParams.get("id");
 
     if (!employeeId) {
-      return NextResponse.json({ error: 'Employee ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Employee ID is required" },
+        { status: 400 }
+      );
     }
 
     const { error, count } = await supabase
-      .from('employees')
+      .from("employees")
       .delete()
-      .eq('employee_id', employeeId);
-      
+      .eq("employee_id", employeeId);
+
     if (error || count === 0) {
-      return NextResponse.json({ error: 'Employee not found or already deleted' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Employee not found or already deleted" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ message: 'Employee deleted successfully' }, { status: 200 });
+    return NextResponse.json(
+      { message: "Employee deleted successfully" },
+      { status: 200 }
+    );
   } catch (error) {
     const err = error as Error;
     return NextResponse.json(
-      { error: 'Failed to delete employee: ' + err.message },
+      { error: "Failed to delete employee: " + err.message },
       { status: 500 }
     );
   }
@@ -107,10 +125,12 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     const updatedEmployeeData: OnboardingData = await req.json();
 
     if (!updatedEmployeeData || !updatedEmployeeData.employeeId) {
-      return NextResponse.json({ error: 'Employee ID is required for update' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Employee ID is required for update" },
+        { status: 400 }
+      );
     }
 
-    // Prepare the update object
     const employeeToUpdate: { [key: string]: unknown } = {
       full_name: updatedEmployeeData.fullName,
       email: updatedEmployeeData.email,
@@ -119,28 +139,39 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
       role: updatedEmployeeData.role,
       date_of_joining: updatedEmployeeData.dateOfJoining,
     };
-    
-    // Conditionally hash and update the password only if a new one is provided
-    if (updatedEmployeeData.password && updatedEmployeeData.password.length > 0) {
-        const saltRounds = 10;
-        employeeToUpdate.password = await bcrypt.hash(updatedEmployeeData.password, saltRounds);
+
+    if (
+      updatedEmployeeData.password &&
+      updatedEmployeeData.password.length > 0
+    ) {
+      const saltRounds = 10;
+      employeeToUpdate.password = await bcrypt.hash(
+        updatedEmployeeData.password,
+        saltRounds
+      );
     }
 
     const { data: updatedData, error } = await supabase
-      .from('employees')
+      .from("employees")
       .update(employeeToUpdate)
-      .eq('employee_id', updatedEmployeeData.employeeId)
+      .eq("employee_id", updatedEmployeeData.employeeId)
       .select();
 
     if (error || !updatedData?.length) {
-      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Employee not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ message: 'Employee updated successfully', employee: updatedData[0] }, { status: 200 });
+    return NextResponse.json(
+      { message: "Employee updated successfully", employee: updatedData[0] },
+      { status: 200 }
+    );
   } catch (error) {
     const err = error as Error;
     return NextResponse.json(
-      { error: 'Failed to update employee: ' + err.message },
+      { error: "Failed to update employee: " + err.message },
       { status: 500 }
     );
   }
