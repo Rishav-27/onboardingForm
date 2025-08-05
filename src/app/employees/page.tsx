@@ -15,24 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Edit, Plus, User } from "lucide-react";
 import toast from "react-hot-toast";
 
-// Helper function to convert snake_case to camelCase
-function toCamelCase<T>(obj: T): T {
-    if (obj === null || typeof obj !== 'object') {
-        return obj;
-    }
-    if (Array.isArray(obj)) {
-        return obj.map(item => toCamelCase(item)) as T;
-    }
-    const newObj = {} as T;
-    for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            const camelCaseKey = key.replace(/_([a-z])/g, (_, char) => char.toUpperCase());
-            newObj[camelCaseKey as keyof T] = toCamelCase(obj[key]);
-        }
-    }
-    return newObj;
-}
-
 export default function EmployeesPage() {
     const router = useRouter();
     const [employees, setEmployees] = useState<OnboardingData[]>([]);
@@ -51,9 +33,8 @@ export default function EmployeesPage() {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Failed to fetch employees.");
             }
-            const data = await response.json();
-            const camelCaseData: OnboardingData[] = toCamelCase(data);
-            setEmployees(camelCaseData);
+            const data: OnboardingData[] = await response.json();
+            setEmployees(data);
         } catch (error: unknown) {
             const err = error as Error;
             console.error("Error fetching employees:", err);
@@ -109,9 +90,13 @@ export default function EmployeesPage() {
         router.push('/onboarding');
     };
 
-    // No changes to loading/error states...
-    if (loading) { /* ... */ }
-    if (error) { /* ... */ }
+    if (loading) {
+        return <div className="text-center p-8">Loading employees...</div>;
+    }
+
+    if (error) {
+        return <div className="text-center p-8 text-red-500">Error: {error}</div>;
+    }
 
     return (
         <div className="container mx-auto p-8">
@@ -147,17 +132,17 @@ export default function EmployeesPage() {
                         </TableHeader>
                         <TableBody>
                             {employees.map((employee, index) => (
-                                <TableRow key={employee.employeeId || index}>
+                                <TableRow key={employee.employee_id || index}>
                                     <TableCell className="font-medium">{index + 1}</TableCell>
-                                    <TableCell>{employee.employeeId || "-"}</TableCell>
+                                    <TableCell>{employee.employee_id || "-"}</TableCell>
                                     <TableCell className="font-medium">
-                                        {employee.fullName}
+                                        {employee.full_name}
                                     </TableCell>
                                     <TableCell>{employee.email}</TableCell>
-                                    <TableCell>{employee.phoneNumber || "-"}</TableCell>
+                                    <TableCell>{employee.phone_number || "-"}</TableCell>
                                     <TableCell>{employee.department || "-"}</TableCell>
                                     <TableCell>{employee.role || "-"}</TableCell>
-                                    <TableCell>{employee.dateOfJoining || "-"}</TableCell>
+                                    <TableCell>{employee.date_of_joining || "-"}</TableCell>
                                     <TableCell className="text-right">
                                         <Button
                                             variant="ghost"
@@ -170,7 +155,7 @@ export default function EmployeesPage() {
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            onClick={() => employee.employeeId && handleDeleteEmployee(employee.employeeId)}
+                                            onClick={() => employee.employee_id && handleDeleteEmployee(employee.employee_id)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

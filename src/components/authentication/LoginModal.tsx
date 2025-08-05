@@ -64,22 +64,18 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             if (response.ok) {
                 const userRoleFromApi = result.user.role;
 
-                // New Logic: Check for role consistency
                 if (selectedRole === 'admin') {
-                    // Only allow login if the selected role is 'admin' AND the DB role is 'admin'
                     if (userRoleFromApi !== 'admin') {
                         toast.error(`You are a ${userRoleFromApi}, not an admin. Please select 'User Login'.`);
                         return;
                     }
-                } else { // selectedRole === 'user'
-                    // Allow login if the selected role is 'user' AND the DB role is NOT 'admin'
+                } else {
                     if (userRoleFromApi === 'admin') {
                         toast.error(`You are an admin, not a user. Please select 'Admin Login'.`);
                         return;
                     }
                 }
 
-                // If the roles match the new logic, proceed with login
                 login(userRoleFromApi, result.user.id);
                 toast.success('Login successful!');
 
@@ -103,7 +99,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
+                <DialogHeader className="pl-12">
                     {selectedRole && (
                         <Button
                             variant="ghost"

@@ -1,3 +1,4 @@
+// features/onboarding/StepThreeAccountSetup.jsx
 'use client';
 
 import { useEffect, useCallback } from "react";
@@ -7,6 +8,7 @@ import { useOnboardingStore, OnboardingData } from "./useOnboardingStore";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
 
 type StepProps = {
     setIsStepValid: (isValid: boolean) => void;
@@ -23,7 +25,7 @@ const departmentPrefixes: { [key: string]: string } = {
 };
 
 export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
-    const { onboardingData, updateOnboardingData, isEditingMode } = useOnboardingStore();
+    const { onboardingData, updateOnboardingData, nextStep, isEditingMode } = useOnboardingStore();
 
     type StepThreeFormData = Pick<OnboardingData, 'password' | 'confirmPassword'>;
 
@@ -43,19 +45,16 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
         getValues,
     } = form;
 
-    const password = watch('password');
-    const confirmPassword = watch('confirmPassword');
-
     const currentDepartment = onboardingData.department;
-    const dateOfJoining = onboardingData.dateOfJoining;
+    const dateOfJoining = onboardingData.date_of_joining;
 
     const generateEmployeeIdStable = useCallback(() => {
         if (currentDepartment && dateOfJoining) {
             try {
                 const parsedDate = new Date(dateOfJoining);
                 if (isNaN(parsedDate.getTime())) {
-                    console.warn("Invalid dateOfJoining for Employee ID generation:", dateOfJoining);
-                    updateOnboardingData({ employeeId: '' });
+                    console.warn("Invalid date_of_joining for Employee ID generation:", dateOfJoining);
+                    updateOnboardingData({ employee_id: '' });
                     return;
                 }
 
@@ -64,48 +63,50 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                 const randomNum = Math.floor(1000 + Math.random() * 9000);
                 const newId = `${yearTwoDigits}${prefix}${randomNum}`;
 
-                updateOnboardingData({ employeeId: newId });
+                updateOnboardingData({ employee_id: newId });
             } catch (error) {
                 console.error("Error generating employee ID:", error);
-                updateOnboardingData({ employeeId: '' });
+                updateOnboardingData({ employee_id: '' });
             }
         } else {
-            updateOnboardingData({ employeeId: '' });
+            updateOnboardingData({ employee_id: '' });
         }
     }, [currentDepartment, dateOfJoining, updateOnboardingData]);
 
     useEffect(() => {
-        // Use the new isEditingMode flag to determine if an ID should be generated
-        if (!isEditingMode && currentDepartment && dateOfJoining && !onboardingData.employeeId) {
+        if (!isEditingMode && currentDepartment && dateOfJoining && !onboardingData.employee_id) {
             generateEmployeeIdStable();
-        } else if (!isEditingMode && (!currentDepartment || !dateOfJoining) && onboardingData.employeeId) {
-            updateOnboardingData({ employeeId: '' });
+        } else if (!isEditingMode && (!currentDepartment || !dateOfJoining) && onboardingData.employee_id) {
+            updateOnboardingData({ employee_id: '' });
         }
-    }, [currentDepartment, dateOfJoining, onboardingData.employeeId, updateOnboardingData, generateEmployeeIdStable, isEditingMode]);
+    }, [currentDepartment, dateOfJoining, onboardingData.employee_id, updateOnboardingData, generateEmployeeIdStable, isEditingMode]);
+    
+    // The previous useEffect for password/confirmPassword is removed.
+    // The form state is now managed locally. We only update the global state on submit.
 
     useEffect(() => {
-        updateOnboardingData({
-            password,
-            confirmPassword,
-        });
-    }, [password, confirmPassword, updateOnboardingData]);
-
-    useEffect(() => {
-        // The step is valid if the form is valid and an employeeId exists
-        const isStepCompletelyValid = isValid && !!onboardingData.employeeId;
+        const isStepCompletelyValid = isValid && !!onboardingData.employee_id;
         setIsStepValid(isStepCompletelyValid);
-    }, [isValid, onboardingData.employeeId, setIsStepValid]);
+    }, [isValid, onboardingData.employee_id, setIsStepValid]);
+
+    const onSubmit = (data: StepThreeFormData) => {
+        // Only update password fields if a new password was entered.
+        if (data.password) {
+            updateOnboardingData({ password: data.password });
+        }
+        nextStep();
+    };
 
     return (
         <Form {...form}>
-            <form onSubmit={handleSubmit((data) => console.log('Step 3 data saved:', data))} className="space-y-6 w-1/2">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-1/2">
                 <FormItem>
                     <FormLabel>Employee ID</FormLabel>
                     <FormControl>
                         <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground shadow-sm items-center">
-                            {isEditingMode // Use the new flag here too
-                                ? onboardingData.employeeId
-                                : onboardingData.employeeId || (currentDepartment && dateOfJoining ? 'Generating ID...' : 'Please fill in Department and Date of Joining in previous step.')
+                            {isEditingMode
+                                ? onboardingData.employee_id
+                                : onboardingData.employee_id || (currentDepartment && dateOfJoining ? 'Generating ID...' : 'Please fill in Department and Date of Joining in previous step.')
                             }
                         </div>
                     </FormControl>
@@ -116,7 +117,6 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     control={control}
                     name="password"
                     rules={{
-                        // Password is only required for new employees
                         required: !isEditingMode ? 'Password is required' : false,
                         minLength: {
                             value: 8,
@@ -142,14 +142,11 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     control={control}
                     name="confirmPassword"
                     rules={{
-                        // This validation handles both 'required' and 'match' logic
                         validate: (value) => {
                             const passwordValue = getValues('password');
-                            // If a new password has been entered, the confirm field must match it.
                             if (passwordValue) {
                                 return value === passwordValue || 'Passwords do not match.';
                             }
-                            // If no new password is being set, the field is optional and considered valid.
                             return true;
                         },
                     }}
@@ -163,6 +160,9 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                         </FormItem>
                     )}
                 />
+
+                <Button type="submit">Submit</Button>
+
             </form>
         </Form>
     );

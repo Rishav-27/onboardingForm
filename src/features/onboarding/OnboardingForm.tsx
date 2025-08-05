@@ -81,7 +81,7 @@ export default function OnboardingForm() {
     const renderStep = () => {
         switch (currentStep) {
             case 1:
-                return <StepOneBasicInfo setIsStepValid={setIsStepValid} />;
+                return <StepOneBasicInfo  />;
             case 2:
                 return <StepTwoJobDetails setIsStepValid={setIsStepValid} />;
             case 3:

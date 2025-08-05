@@ -52,19 +52,18 @@ const roles = [
 ];
 
 export default function StepTwoJobDetails({ setIsStepValid }: StepProps) {
-    // Use the new isEditingMode flag from the store
     const { onboardingData, updateOnboardingData, isEditingMode } = useOnboardingStore();
 
     type StepTwoFormData = Pick<
         OnboardingData,
-        "department" | "role" | "dateOfJoining"
+        "department" | "role" | "date_of_joining"
     >;
 
     const form = useForm<StepTwoFormData>({
         defaultValues: {
             department: onboardingData.department || "",
             role: onboardingData.role || "",
-            dateOfJoining: onboardingData.dateOfJoining || "",
+            date_of_joining: onboardingData.date_of_joining || "",
         },
         mode: "onChange",
     });
@@ -78,13 +77,13 @@ export default function StepTwoJobDetails({ setIsStepValid }: StepProps) {
 
     const department = watch("department");
     const role = watch("role");
-    const dateOfJoining = watch("dateOfJoining");
+    const dateOfJoining = watch("date_of_joining"); // Corrected to date_of_joining
 
     useEffect(() => {
         updateOnboardingData({
             department,
             role,
-            dateOfJoining,
+            date_of_joining: dateOfJoining, // Corrected property name
         });
     }, [department, role, dateOfJoining, updateOnboardingData]);
 
@@ -154,7 +153,7 @@ export default function StepTwoJobDetails({ setIsStepValid }: StepProps) {
 
                 <FormField
                     control={control}
-                    name="dateOfJoining"
+                    name="date_of_joining" // Corrected to date_of_joining
                     rules={{ required: "Date of Joining is required" }}
                     render={({ field }) => (
                         <FormItem className="flex flex-col">
