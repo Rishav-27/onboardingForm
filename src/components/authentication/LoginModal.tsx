@@ -63,23 +63,18 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             if (response.ok) {
                 const userRoleFromApi = result.user.role;
-
-                // New Logic: Check for role consistency
                 if (selectedRole === 'admin') {
-                    // Only allow login if the selected role is 'admin' AND the DB role is 'admin'
                     if (userRoleFromApi !== 'admin') {
                         toast.error(`You are a ${userRoleFromApi}, not an admin. Please select 'User Login'.`);
                         return;
                     }
-                } else { // selectedRole === 'user'
-                    // Allow login if the selected role is 'user' AND the DB role is NOT 'admin'
+                } else {
                     if (userRoleFromApi === 'admin') {
                         toast.error(`You are an admin, not a user. Please select 'Admin Login'.`);
                         return;
                     }
                 }
 
-                // If the roles match the new logic, proceed with login
                 login(userRoleFromApi, result.user.id);
                 toast.success('Login successful!');
 
@@ -103,24 +98,26 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
+                <DialogHeader className="relative flex flex-row items-center gap-2 pr-6"> {/* Updated classes here */}
                     {selectedRole && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedRole(null)}
-                            className="absolute left-4 top-4"
+                            className="p-2" // Simplified button styling
                         >
-                            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+                            <ArrowLeft className="h-4 w-4" />
                         </Button>
                     )}
-                    <DialogTitle>{selectedRole ? `${selectedRole} Login` : 'Select Your Login Type'}</DialogTitle>
-                    <DialogDescription>
-                        {selectedRole ? 'Enter your credentials to log in.' : 'Choose your role to proceed.'}
-                    </DialogDescription>
+                    <DialogTitle>
+                        {selectedRole ? `${selectedRole} Login` : 'Select Your Login Type'}
+                    </DialogTitle>
                 </DialogHeader>
+                <DialogDescription className="px-6">
+                    {selectedRole ? 'Enter your credentials to log in.' : 'Choose your role to proceed.'}
+                </DialogDescription>
                 {!selectedRole ? (
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 px-6 pb-6">
                         <Button onClick={() => setSelectedRole('admin')} className="w-full">
                             Admin Login
                         </Button>
@@ -130,7 +127,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     </div>
                 ) : (
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-6 pb-6">
                             <FormField
                                 control={form.control}
                                 name="userId"

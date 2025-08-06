@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone, Briefcase, Calendar, User, Building, Plus, List } from 'lucide-react';
+import { Mail, Phone, Briefcase, Calendar, User, Building, Plus, List,Edit } from 'lucide-react';
 import { useAuthStore } from '@/lib/useAuthStore';
-import { OnboardingData } from '@/features/onboarding/useOnboardingStore';
+import { OnboardingData, useOnboardingStore } from '@/features/onboarding/useOnboardingStore';
 import toast from 'react-hot-toast';
 import { JSX } from 'react/jsx-runtime';
 import { Loader2 } from 'lucide-react';
@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 export default function ProfilePage(): JSX.Element {
     const router = useRouter();
     const { isAuthenticated, isAdmin, userId } = useAuthStore();
+    const { setOnboardingData , setEditingMode} = useOnboardingStore();
     const [profileData, setProfileData] = useState<OnboardingData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -56,6 +57,16 @@ export default function ProfilePage(): JSX.Element {
         fetchProfileData();
     }, [userId, isAuthenticated]);
 
+    const handleEditProfile =() =>{
+        if (profileData){
+            setOnboardingData(profileData);
+            setEditingMode(true);
+            router.push('/edit-profile');
+        }else{
+            toast.error("Cannot edit: No profile data to load.");
+        }
+    };
+
     if (isLoading || !isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -97,9 +108,15 @@ export default function ProfilePage(): JSX.Element {
     
                 <CardContent className="p-6 space-y-6 bg-gray-50">
                     <div className="p-4 bg-white rounded-lg shadow-md space-y-4">
-                        <div className="flex items-center space-x-2 border-b pb-2">
-                            <span className="text-base font-semibold text-blue-600">Employee ID:</span>
-                            <span className="text-base font-bold text-gray-900">{profileData.employee_id}</span>
+                         <div className="flex items-center justify-between border-b pb-2">
+                            <div className="flex items-center space-x-2">
+                                <span className="text-base font-semibold text-blue-600">Employee ID:</span>
+                                <span className="text-base font-bold text-gray-900">{profileData.employee_id}</span>
+                            </div>
+                            
+                            <Button variant="outline" onClick={handleEditProfile} size="sm">
+                                <Edit className="h-4 w-4" />
+                            </Button>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

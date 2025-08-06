@@ -11,8 +11,7 @@ import { Toaster, toast } from "react-hot-toast";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function OnboardingForm() {
-    // Use the new isEditingMode flag from the store
-    const { currentStep, nextStep, prevStep, onboardingData, isEditingMode } = useOnboardingStore();
+    const { currentStep, nextStep, prevStep, onboardingData, isEditingMode, resetOnboarding } = useOnboardingStore();
     const [isStepValid, setIsStepValid] = useState(false);
     const router = useRouter();
 
@@ -20,9 +19,7 @@ export default function OnboardingForm() {
         setIsStepValid(false);
     }, [currentStep]);
 
-    // Removed the useEffect that called resetOnboarding on mount.
-    // The state is now reset by the component that triggers the "add new employee" action.
-
+    // Use a single handler for navigation that accounts for both editing and new onboarding
     const handleNext = () => {
         if (isStepValid) {
             if (currentStep < 3) {
@@ -40,13 +37,11 @@ export default function OnboardingForm() {
     };
 
     const handleSubmitAll = async () => {
-        // Exclude the 'confirmPassword' field
         const { confirmPassword, ...onboardingDataToSend } = onboardingData;
-
+        
         try {
-            // Determine API method based on the new flag
             const method = isEditingMode ? "PUT" : "POST";
-            const apiEndpoint = "/api/employees";
+            const apiEndpoint = "/api/employees"; // The API endpoint will handle the PUT or POST logic
 
             const response = await fetch(apiEndpoint, {
                 method: method,
@@ -58,17 +53,29 @@ export default function OnboardingForm() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || `Failed to ${isEditingMode ? "update" : "add"} employee.`);
+                throw new Error(
+                    errorData.error ||
+                    `Failed to ${isEditingMode ? "update" : "add"} employee.`
+                );
             }
 
             const result = await response.json();
-            console.log(`Employee ${isEditingMode ? "updated" : "added"} successfully:`, result.employee);
+            console.log(
+                `Employee ${isEditingMode ? "updated" : "added"} successfully:`,
+                result.employee
+            );
 
-            toast.success(`Employee ${isEditingMode ? "updated" : "onboarding complete"}! Redirecting...`, {
-                position: "bottom-right",
-            });
+            toast.success(
+                `Employee ${isEditingMode ? "updated" : "onboarding complete"}! Redirecting...`,
+                {
+                    position: "bottom-right",
+                }
+            );
 
-            router.push("/employees");
+            // Reset the store and redirect to the correct page
+            resetOnboarding();
+            router.push(isEditingMode ? "/profile" : "/employees");
+
         } catch (error: unknown) {
             const err = error as Error;
             console.error(`Error submitting data:`, err);
@@ -91,7 +98,9 @@ export default function OnboardingForm() {
         }
     };
 
-    const pageTitle = isEditingMode ? "Edit Employee Details" : "New Employee Onboarding";
+    const pageTitle = isEditingMode
+        ? "Edit Employee Details"
+        : "New Employee Onboarding";
     const submitButtonText = isEditingMode ? "Save Changes" : "Submit All";
 
     return (

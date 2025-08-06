@@ -142,14 +142,12 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     control={control}
                     name="confirmPassword"
                     rules={{
-                        // This validation handles both 'required' and 'match' logic
+                        
                         validate: (value) => {
                             const passwordValue = getValues('password');
-                            // If a new password has been entered, the confirm field must match it.
                             if (passwordValue) {
                                 return value === passwordValue || 'Passwords do not match.';
                             }
-                            // If no new password is being set, the field is optional and considered valid.
                             return true;
                         },
                     }}
