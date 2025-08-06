@@ -10,6 +10,7 @@ import { OnboardingData, useOnboardingStore } from '@/features/onboarding/useOnb
 import toast from 'react-hot-toast';
 import { JSX } from 'react/jsx-runtime';
 import { Loader2 } from 'lucide-react';
+import { UploadAvatar } from '@/features/profile/UploadAvatar';
 
 export default function ProfilePage(): JSX.Element {
     const router = useRouter();
@@ -97,7 +98,7 @@ export default function ProfilePage(): JSX.Element {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
             <Card className="w-full max-w-4xl mx-auto shadow-xl rounded-xl overflow-hidden">
                 <CardHeader className="bg-white text-center">
-                    <User className="h-8 w-8 mx-auto text-blue-600 mb-1" />
+                     {profileData && <UploadAvatar currentImageUrl={profileData.profile_image_url} />}
                     <CardTitle className="text-2xl font-extrabold tracking-tight text-gray-900">
                         {profileData.full_name || 'Employee Profile'}
                     </CardTitle>

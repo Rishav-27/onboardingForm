@@ -10,6 +10,7 @@ export interface OnboardingData {
   employee_id: string;
   password?: string;
   confirmPassword?: string;
+  profile_image_url?: string | null;
 }
 
 export interface OnboardingStoreState {

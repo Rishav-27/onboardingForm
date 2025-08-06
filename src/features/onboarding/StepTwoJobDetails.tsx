@@ -181,9 +181,15 @@ export default function StepTwoJobDetails({ setIsStepValid }: StepProps) {
                                         mode="single"
                                         selected={field.value ? new Date(field.value) : undefined}
                                         onSelect={(date) => {
-                                            field.onChange(
-                                                date ? date.toISOString().split("T")[0] : ""
-                                            );
+                                            if (date) {
+                                                // Use local date formatting to avoid timezone issues
+                                                const year = date.getFullYear();
+                                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                                const day = String(date.getDate()).padStart(2, '0');
+                                                field.onChange(`${year}-${month}-${day}`);
+                                            } else {
+                                                field.onChange("");
+                                            }
                                         }}
                                         disabled={(date) =>
                                             date > new Date() || date < new Date("1900-01-01")

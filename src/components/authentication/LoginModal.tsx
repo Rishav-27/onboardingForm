@@ -75,7 +75,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     }
                 }
 
-                login(userRoleFromApi, result.user.id);
+                login(userRoleFromApi, result.user.id, {
+                    full_name: result.user.full_name,
+                    profile_image_url: result.user.profile_image_url
+                });
                 toast.success('Login successful!');
 
                 handleClose();

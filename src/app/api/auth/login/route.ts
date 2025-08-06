@@ -18,7 +18,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const { data: employees, error } = await supabase
       .from("employees")
-      .select("password, employee_id, role")
+      .select("password, employee_id, role, full_name, profile_image_url")
       .eq("employee_id", employeeId)
       .single();
 
@@ -40,7 +40,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       {
         message: "Login successful",
-        user: { id: employees.employee_id, role: employees.role },
+        user: {
+          id: employees.employee_id,
+          role: employees.role,
+          full_name: employees.full_name,
+          profile_image_url: employees.profile_image_url
+        },
         token: "mock-session-token",
       },
       { status: 200 }
