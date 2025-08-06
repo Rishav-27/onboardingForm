@@ -33,8 +33,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (
       !newEmployeeData ||
-      !newEmployeeData.employeeId ||
-      !newEmployeeData.fullName ||
+      !newEmployeeData.employee_id ||
+      !newEmployeeData.full_name ||
       !newEmployeeData.email ||
       !newEmployeeData.password
     ) {
@@ -51,13 +51,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
 
     const employeeToInsert = {
-      employee_id: newEmployeeData.employeeId,
-      full_name: newEmployeeData.fullName,
+      employee_id: newEmployeeData.employee_id,
+      full_name: newEmployeeData.full_name,
       email: newEmployeeData.email,
-      phone_number: newEmployeeData.phoneNumber,
+      phone_number: newEmployeeData.phone_number,
       department: newEmployeeData.department,
       role: newEmployeeData.role,
-      date_of_joining: newEmployeeData.dateOfJoining,
+      date_of_joining: newEmployeeData.date_of_joining,
       password: hashedPassword,
     };
 
@@ -124,7 +124,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
   try {
     const updatedEmployeeData: OnboardingData = await req.json();
 
-    if (!updatedEmployeeData || !updatedEmployeeData.employeeId) {
+    if (!updatedEmployeeData || !updatedEmployeeData.employee_id) {
       return NextResponse.json(
         { error: "Employee ID is required for update" },
         { status: 400 }
@@ -132,12 +132,12 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     }
 
     const employeeToUpdate: { [key: string]: unknown } = {
-      full_name: updatedEmployeeData.fullName,
+      full_name: updatedEmployeeData.full_name,
       email: updatedEmployeeData.email,
-      phone_number: updatedEmployeeData.phoneNumber,
+      phone_number: updatedEmployeeData.phone_number,
       department: updatedEmployeeData.department,
       role: updatedEmployeeData.role,
-      date_of_joining: updatedEmployeeData.dateOfJoining,
+      date_of_joining: updatedEmployeeData.date_of_joining,
     };
 
     if (
@@ -154,7 +154,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     const { data: updatedData, error } = await supabase
       .from("employees")
       .update(employeeToUpdate)
-      .eq("employee_id", updatedEmployeeData.employeeId)
+      .eq("employee_id", updatedEmployeeData.employee_id)
       .select();
 
     if (error || !updatedData?.length) {

@@ -14,10 +14,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     if (!employeeId) {
       console.error("Error: Employee ID is missing from the request.");
-      return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Employee ID is required" },
+        { status: 400 }
+      );
     }
-    
-    console.log(`Debug: Attempting to fetch profile for employee ID: ${employeeId}`);
+
+    console.log(
+      `Debug: Attempting to fetch profile for employee ID: ${employeeId}`
+    );
 
     const { data: employee, error } = await supabase
       .from("employees")
@@ -26,12 +31,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .single();
 
     if (error || !employee) {
-      console.error(`Error: Employee with ID ${employeeId} not found. Supabase error:`, error?.message);
-      return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+      console.error(
+        `Error: Employee with ID ${employeeId} not found. Supabase error:`,
+        error?.message
+      );
+      return NextResponse.json(
+        { error: "Employee not found" },
+        { status: 404 }
+      );
     }
 
-    // This log will display the full JSON object fetched from the database
-    console.log(`Success: Fetched profile data for ID ${employeeId}. Data:`, employee);
+    console.log(
+      `Success: Fetched profile data for ID ${employeeId}. Data:`,
+      employee
+    );
 
     return NextResponse.json(employee, { status: 200 });
   } catch (error) {

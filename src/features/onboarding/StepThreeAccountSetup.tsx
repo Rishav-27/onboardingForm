@@ -47,15 +47,15 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
     const confirmPassword = watch('confirmPassword');
 
     const currentDepartment = onboardingData.department;
-    const dateOfJoining = onboardingData.dateOfJoining;
+    const date_of_joining = onboardingData.date_of_joining;
 
     const generateEmployeeIdStable = useCallback(() => {
-        if (currentDepartment && dateOfJoining) {
+        if (currentDepartment && date_of_joining) {
             try {
-                const parsedDate = new Date(dateOfJoining);
+                const parsedDate = new Date(date_of_joining);
                 if (isNaN(parsedDate.getTime())) {
-                    console.warn("Invalid dateOfJoining for Employee ID generation:", dateOfJoining);
-                    updateOnboardingData({ employeeId: '' });
+                    console.warn("Invalid dateOfJoining for Employee ID generation:", date_of_joining);
+                    updateOnboardingData({ employee_id: '' });
                     return;
                 }
 
@@ -64,24 +64,24 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                 const randomNum = Math.floor(1000 + Math.random() * 9000);
                 const newId = `${yearTwoDigits}${prefix}${randomNum}`;
 
-                updateOnboardingData({ employeeId: newId });
+                updateOnboardingData({ employee_id: newId });
             } catch (error) {
                 console.error("Error generating employee ID:", error);
-                updateOnboardingData({ employeeId: '' });
+                updateOnboardingData({ employee_id: '' });
             }
         } else {
-            updateOnboardingData({ employeeId: '' });
+            updateOnboardingData({ employee_id: '' });
         }
-    }, [currentDepartment, dateOfJoining, updateOnboardingData]);
+    }, [currentDepartment, date_of_joining, updateOnboardingData]);
 
     useEffect(() => {
         // Use the new isEditingMode flag to determine if an ID should be generated
-        if (!isEditingMode && currentDepartment && dateOfJoining && !onboardingData.employeeId) {
+        if (!isEditingMode && currentDepartment && date_of_joining && !onboardingData.employee_id) {
             generateEmployeeIdStable();
-        } else if (!isEditingMode && (!currentDepartment || !dateOfJoining) && onboardingData.employeeId) {
-            updateOnboardingData({ employeeId: '' });
+        } else if (!isEditingMode && (!currentDepartment || !date_of_joining) && onboardingData.employee_id) {
+            updateOnboardingData({ employee_id: '' });
         }
-    }, [currentDepartment, dateOfJoining, onboardingData.employeeId, updateOnboardingData, generateEmployeeIdStable, isEditingMode]);
+    }, [currentDepartment, date_of_joining, onboardingData.employee_id, updateOnboardingData, generateEmployeeIdStable, isEditingMode]);
 
     useEffect(() => {
         updateOnboardingData({
@@ -92,9 +92,9 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
 
     useEffect(() => {
         // The step is valid if the form is valid and an employeeId exists
-        const isStepCompletelyValid = isValid && !!onboardingData.employeeId;
+        const isStepCompletelyValid = isValid && !!onboardingData.employee_id;
         setIsStepValid(isStepCompletelyValid);
-    }, [isValid, onboardingData.employeeId, setIsStepValid]);
+    }, [isValid, onboardingData.employee_id, setIsStepValid]);
 
     return (
         <Form {...form}>
@@ -104,8 +104,8 @@ export default function StepThreeAccountSetup({ setIsStepValid }: StepProps) {
                     <FormControl>
                         <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground shadow-sm items-center">
                             {isEditingMode // Use the new flag here too
-                                ? onboardingData.employeeId
-                                : onboardingData.employeeId || (currentDepartment && dateOfJoining ? 'Generating ID...' : 'Please fill in Department and Date of Joining in previous step.')
+                                ? onboardingData.employee_id
+                                : onboardingData.employee_id || (currentDepartment && date_of_joining ? 'Generating ID...' : 'Please fill in Department and Date of Joining in previous step.')
                             }
                         </div>
                     </FormControl>
