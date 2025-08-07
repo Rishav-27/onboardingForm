@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { AuthService, Employee } from './auth-service';
 
 type AuthState = {
     isAuthenticated: boolean;
@@ -8,10 +9,11 @@ type AuthState = {
     full_name: string | null;
     profile_image_url: string | null;
     role: 'admin' | 'user' | null;
-    login: (role: 'admin' | 'user', userId: string, userData?: { full_name?: string; profile_image_url?: string }) => void;
+    isFullyAuthenticated: boolean;
+    hasShownWelcome: boolean;
+    login: (employee: Employee, requiresAuth?: boolean) => void;
     logout: () => void;
-    updateUserData: (userData: { full_name?: string; profile_image_url?: string }) => void;
-    fetchUserData: (userId: string) => Promise<void>;
+    handleOAuthLogin: (authUser: { id: string; email?: string; user_metadata?: { avatar_url?: string } }) => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -23,21 +25,19 @@ export const useAuthStore = create<AuthState>()(
             profile_image_url: null,
             userId: null,
             role: null,
+            isFullyAuthenticated: false,
+            hasShownWelcome: false,
 
-            login: (role, userId, userData) => {
+            login: (employee: Employee, requiresAuth = false) => {
                 set({
                     isAuthenticated: true,
-                    isAdmin: role === 'admin',
-                    userId,
-                    role,
-                    full_name: userData?.full_name || null,
-                    profile_image_url: userData?.profile_image_url || null,
+                    isAdmin: employee.role === 'admin',
+                    userId: employee.employee_id,
+                    role: employee.role,
+                    full_name: employee.full_name,
+                    profile_image_url: employee.profile_image_url || null,
+                    isFullyAuthenticated: !requiresAuth,
                 });
-
-                // If userData is not provided, fetch it
-                if (!userData?.full_name) {
-                    get().fetchUserData(userId);
-                }
             },
 
             logout: () => {
@@ -48,30 +48,54 @@ export const useAuthStore = create<AuthState>()(
                     role: null,
                     full_name: null,
                     profile_image_url: null,
+                    isFullyAuthenticated: false,
+                    hasShownWelcome: false,
                 });
+
+                // Clear all storage
+                if (typeof window !== 'undefined') {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                }
             },
 
-            updateUserData: (userData) => {
-                set((state) => ({
-                    ...state,
-                    full_name: userData.full_name ?? state.full_name,
-                    profile_image_url: userData.profile_image_url ?? state.profile_image_url,
-                }));
-            },
+            handleOAuthLogin: async (authUser: { id: string; email?: string; user_metadata?: { avatar_url?: string } }) => {
+                const currentState = get();
 
-            fetchUserData: async (userId) => {
+                if (currentState.isAuthenticated) {
+                    return;
+                }
+
                 try {
-                    const response = await fetch(`/api/profile?id=${userId}`);
-                    if (response.ok) {
-                        const userData = await response.json();
-                        set((state) => ({
-                            ...state,
-                            full_name: userData.full_name,
-                            profile_image_url: userData.profile_image_url,
-                        }));
+                    if (!authUser.email) {
+                        throw new Error('No email provided');
+                    }
+                    const result = await AuthService.linkOAuthUser(authUser.email, authUser.id);
+
+                    if (result.success && result.employee) {
+                        set({
+                            isAuthenticated: true,
+                            isAdmin: result.employee.role === 'admin',
+                            userId: result.employee.employee_id,
+                            full_name: result.employee.full_name,
+                            profile_image_url: result.employee.profile_image_url || authUser.user_metadata?.avatar_url,
+                            role: result.employee.role,
+                            isFullyAuthenticated: true,
+                        });
+
+                        setTimeout(() => {
+                            if (result.employee!.role === 'admin') {
+                                window.location.href = '/onboarding';
+                            } else {
+                                window.location.href = '/profile';
+                            }
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error || 'Failed to link account');
                     }
                 } catch (error) {
-                    console.error('Failed to fetch user data:', error);
+                    console.error('OAuth login failed:', error);
+                    throw error;
                 }
             },
         }),

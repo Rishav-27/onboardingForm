@@ -11,13 +11,24 @@ import toast from 'react-hot-toast';
 import { JSX } from 'react/jsx-runtime';
 import { Loader2 } from 'lucide-react';
 import { UploadAvatar } from '@/features/profile/UploadAvatar';
+import { AuthenticationBanner, AuthenticationStatus } from '@/components/common/AuthenticationBanner';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage(): JSX.Element {
     const router = useRouter();
-    const { isAuthenticated, isAdmin, userId } = useAuthStore();
+    const { isAuthenticated, isAdmin, userId, isFullyAuthenticated } = useAuthStore();
     const { setOnboardingData , setEditingMode} = useOnboardingStore();
     const [profileData, setProfileData] = useState<OnboardingData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    const getInitials = (name: string | null) => {
+        if (!name) return "UN";
+        const parts = name.split(' ');
+        if (parts.length > 1) {
+            return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+        }
+        return parts[0][0].toUpperCase();
+    };
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -98,16 +109,53 @@ export default function ProfilePage(): JSX.Element {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
             <Card className="w-full max-w-4xl mx-auto shadow-xl rounded-xl overflow-hidden">
                 <CardHeader className="bg-white text-center">
-                     {profileData && <UploadAvatar currentImageUrl={profileData.profile_image_url} />}
-                    <CardTitle className="text-2xl font-extrabold tracking-tight text-gray-900">
-                        {profileData.full_name || 'Employee Profile'}
-                    </CardTitle>
-                    <CardDescription className="text-gray-600 mt-1 text-sm max-w-lg mx-auto">
-                        A detailed overview of the information submitted during the employee onboarding process.
-                    </CardDescription>
+                    <div className="flex flex-col items-center space-y-4">
+                        <div className="relative group">
+                            <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                                {profileData.profile_image_url ? (
+                                    <AvatarImage
+                                        src={profileData.profile_image_url}
+                                        alt="Profile"
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold text-2xl">
+                                        {getInitials(profileData.full_name)}
+                                    </AvatarFallback>
+                                )}
+                            </Avatar>
+                            <div className="absolute -bottom-1 -right-1">
+                                {profileData && <UploadAvatar />}
+                            </div>
+                        </div>
+
+                        <div>
+                            <CardTitle className="text-2xl font-extrabold tracking-tight text-gray-900">
+                                {profileData.full_name || 'Employee Profile'}
+                            </CardTitle>
+                            <CardDescription className="text-gray-600 mt-1 text-sm max-w-lg mx-auto">
+                                A detailed overview of the information submitted during the employee onboarding process.
+                            </CardDescription>
+                        </div>
+
+                        <div className="mt-2">
+                            <AuthenticationStatus isAuthenticated={isFullyAuthenticated} />
+                        </div>
+                    </div>
                 </CardHeader>
-    
+
                 <CardContent className="p-6 space-y-6 bg-gray-50">
+                    <AuthenticationBanner
+                        isAuthenticated={isFullyAuthenticated}
+                        userEmail={profileData.email}
+                        onAuthenticateClick={() => {
+                            toast('Please use Google or GitHub login to complete authentication.', {
+                                duration: 4000,
+                                icon: '🔐',
+                                position: 'bottom-right',
+                            });
+                        }}
+                    />
                     <div className="p-4 bg-white rounded-lg shadow-md space-y-4">
                          <div className="flex items-center justify-between border-b pb-2">
                             <div className="flex items-center space-x-2">

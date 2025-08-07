@@ -3,9 +3,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -20,9 +27,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    console.log(
-      `Debug: Attempting to fetch profile for employee ID: ${employeeId}`
-    );
+
 
     const { data: employee, error } = await supabase
       .from("employees")
@@ -41,10 +46,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    console.log(
-      `Success: Fetched profile data for ID ${employeeId}. Data:`,
-      employee
-    );
+
 
     return NextResponse.json(employee, { status: 200 });
   } catch (error) {

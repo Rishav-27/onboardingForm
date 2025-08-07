@@ -5,18 +5,16 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/useAuthStore';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import { Upload, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-interface UploadAvatarProps {
-    currentImageUrl?: string | null;
-}
 
-export function UploadAvatar({ currentImageUrl }: UploadAvatarProps) {
+
+export function UploadAvatar() {
     const { userId } = useAuthStore();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
@@ -24,7 +22,6 @@ export function UploadAvatar({ currentImageUrl }: UploadAvatarProps) {
         const file = e.target.files?.[0];
         if (file) {
             setSelectedFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
         }
     };
 
@@ -50,17 +47,15 @@ export function UploadAvatar({ currentImageUrl }: UploadAvatarProps) {
                 throw new Error(errorData.error || 'Failed to upload image.');
             }
 
-            const { publicUrl } = await response.json();
-            
-           
-            toast.success('Profile image updated successfully!');
+            await response.json();
+
+            toast.success('Profile image updated successfully!', { position: 'bottom-right' });
             setSelectedFile(null);
-            setPreviewUrl(null);
-            router.refresh(); 
+            router.refresh();
         } catch (error) {
             console.error('Upload error:', error);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-            toast.error(errorMessage);
+            toast.error(errorMessage, { position: 'bottom-right' });
         } finally {
             setIsLoading(false);
         }
@@ -68,50 +63,45 @@ export function UploadAvatar({ currentImageUrl }: UploadAvatarProps) {
 
     const handleRemove = () => {
         setSelectedFile(null);
-        setPreviewUrl(null);
     };
 
-    const getInitials = (id: string | null) => {
-        if (!id) return "UN";
-        const parts = id.split('');
-        return parts.length >= 2 ? `${parts[0]}${parts[1]}`.toUpperCase() : parts[0].toUpperCase();
-    };
+
 
     return (
-        <div className="flex flex-col items-center gap-4">
-             <Avatar className="h-24 w-24 border-2 border-gray-200 shadow-md">
-                
-                <AvatarImage 
-                    src={previewUrl || (currentImageUrl ? currentImageUrl : undefined)} 
-                    alt="Profile" 
-                    className="object-cover" 
-                />
-                <AvatarFallback>{getInitials(userId)}</AvatarFallback>
-            </Avatar>
-            
-            <div className="flex items-center gap-2">
-                <label className="cursor-pointer">
-                    <Input type="file" onChange={handleFileChange} className="hidden" accept="image/*" />
-                    <Button asChild>
-                        <span><Upload className="h-4 w-4 mr-2" />Select Image</span>
-                    </Button>
-                </label>
-                {selectedFile && (
-                    <Button onClick={handleRemove} variant="destructive" size="icon">
-                        <X className="h-4 w-4" />
-                    </Button>
-                )}
-            </div>
+        <div className="relative">
+            <label className="cursor-pointer">
+                <Input type="file" onChange={handleFileChange} className="hidden" accept="image/*" />
+                <Button
+                    size="sm"
+                    className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg"
+                    asChild
+                >
+                    <span>
+                        {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Upload className="h-4 w-4" />
+                        )}
+                    </span>
+                </Button>
+            </label>
 
             {selectedFile && (
-                <Button onClick={handleUpload} disabled={isLoading} className="mt-2 w-full">
-                    {isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <Upload className="mr-2 h-4 w-4" />
-                    )}
-                    {isLoading ? 'Uploading...' : 'Save Avatar'}
-                </Button>
+                <div className="absolute top-10 right-0 bg-white rounded-lg shadow-lg border p-2 z-10">
+                    <div className="flex items-center gap-2">
+                        <Button onClick={handleUpload} disabled={isLoading} size="sm">
+                            {isLoading ? (
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            ) : (
+                                <Upload className="mr-1 h-3 w-3" />
+                            )}
+                            {isLoading ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button onClick={handleRemove} variant="destructive" size="sm">
+                            <X className="h-3 w-3" />
+                        </Button>
+                    </div>
+                </div>
             )}
         </div>
     );

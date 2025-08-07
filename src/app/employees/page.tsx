@@ -62,12 +62,12 @@ export default function EmployeesPage() {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Failed to delete employee.");
             }
-            toast.success("Employee deleted successfully!");
+            toast.success("Employee deleted successfully!", { position: 'bottom-right' });
             await fetchEmployees();
         } catch (e) {
             console.error("Error deleting employee:", e);
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred while deleting the employee.";
-            toast.error(`Error deleting employee: ${errorMessage}`);
+            toast.error(`Error deleting employee: ${errorMessage}`, { position: 'bottom-right' });
         }
     };
 

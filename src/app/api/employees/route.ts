@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { OnboardingData } from "@/features/onboarding/useOnboardingStore";
-import bcrypt from "bcrypt";
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
+
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -44,33 +52,52 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(
-      newEmployeeData.password,
-      saltRounds
-    );
 
+    // Create Supabase Auth user with email verification
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email: newEmployeeData.email.toLowerCase().trim(),
+      password: newEmployeeData.password,
+      email_confirm: true, // Auto-confirm email for admin-created users
+      user_metadata: {
+        full_name: newEmployeeData.full_name,
+        employee_id: newEmployeeData.employee_id,
+        department: newEmployeeData.department,
+        role: newEmployeeData.role
+      }
+    });
+
+    if (authError || !authUser.user) {
+      throw new Error(authError?.message || 'Failed to create user account');
+    }
+
+    // Create employee record
     const employeeToInsert = {
       employee_id: newEmployeeData.employee_id,
       full_name: newEmployeeData.full_name,
-      email: newEmployeeData.email,
+      email: newEmployeeData.email.toLowerCase().trim(),
       phone_number: newEmployeeData.phone_number,
       department: newEmployeeData.department,
       role: newEmployeeData.role,
       date_of_joining: newEmployeeData.date_of_joining,
-      password: hashedPassword,
+      auth_user_id: authUser.user.id,
     };
 
-    const { error } = await supabase.from("employees").insert(employeeToInsert);
+    const { data: employee, error: dbError } = await supabase
+      .from("employees")
+      .insert(employeeToInsert)
+      .select()
+      .single();
 
-    if (error) {
-      throw new Error(error.message);
+    if (dbError) {
+      // Clean up auth user if database insert fails
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      throw new Error(dbError.message);
     }
 
     return NextResponse.json(
       {
-        message: "Employee added successfully",
-        employee: { ...employeeToInsert, password: "***" },
+        message: "Employee created successfully with verified email",
+        employee: { ...employee, password: "***" },
       },
       { status: 201 }
     );
@@ -140,16 +167,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
       date_of_joining: updatedEmployeeData.date_of_joining,
     };
 
-    if (
-      updatedEmployeeData.password &&
-      updatedEmployeeData.password.length > 0
-    ) {
-      const saltRounds = 10;
-      employeeToUpdate.password = await bcrypt.hash(
-        updatedEmployeeData.password,
-        saltRounds
-      );
-    }
+
 
     const { data: updatedData, error } = await supabase
       .from("employees")

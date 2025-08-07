@@ -28,7 +28,9 @@ export default function OnboardingForm() {
                 handleSubmitAll();
             }
         } else {
-            toast.error(`Please complete Step ${currentStep} to proceed.`);
+            toast.error(`Please complete Step ${currentStep} to proceed.`, {
+                position: "bottom-right",
+            });
         }
     };
 
@@ -37,6 +39,7 @@ export default function OnboardingForm() {
     };
 
     const handleSubmitAll = async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirmPassword, ...onboardingDataToSend } = onboardingData;
         
         try {
@@ -65,12 +68,19 @@ export default function OnboardingForm() {
                 result.employee
             );
 
-            toast.success(
-                `Employee ${isEditingMode ? "updated" : "onboarding complete"}! Redirecting...`,
-                {
+            if (isEditingMode) {
+                toast.success("Employee updated successfully! Redirecting...", {
                     position: "bottom-right",
-                }
-            );
+                });
+            } else {
+                toast.success(
+                    `✅ Employee created successfully!\n🔐 They can now login with:\n• Employee ID + Password\n• Google OAuth (${onboardingData.email})\n• GitHub OAuth (${onboardingData.email})`,
+                    {
+                        position: "bottom-right",
+                        duration: 6000,
+                    }
+                );
+            }
 
             // Reset the store and redirect to the correct page
             resetOnboarding();

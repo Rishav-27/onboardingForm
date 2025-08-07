@@ -4,18 +4,47 @@ import { motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Users, Briefcase, LogIn } from 'lucide-react';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoginModal } from '@/components/authentication/LoginModal';
+import toast from 'react-hot-toast';
 
-export default function Home() {
+function HomeContent() {
   const { isAuthenticated, isAdmin, full_name } = useAuthStore();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleNavigation = (path: string) => {
     router.push(path);
   };
+
+  // Handle welcome message for new users
+  useEffect(() => {
+    const welcome = searchParams.get('welcome');
+    const error = searchParams.get('error');
+    const oauthSuccess = searchParams.get('oauth_success');
+
+    if (welcome === 'true') {
+      toast.success('🎉 Welcome! Your account has been activated. You can now log in.', {
+        duration: 6000,
+        position: 'bottom-right',
+      });
+    }
+
+    if (error === 'auth_failed') {
+      toast.error('Authentication failed. Please try again or contact support.', {
+        position: 'bottom-right',
+      });
+    }
+
+    if (oauthSuccess === 'true') {
+      toast.success('OAuth authentication successful! Linking your account...', {
+        duration: 4000,
+        position: 'bottom-right',
+      });
+    }
+  }, [searchParams]);
 
   const renderActionButtons = () => {
     if (isAuthenticated && isAdmin) {
@@ -154,5 +183,13 @@ export default function Home() {
         onClose={() => setIsLoginModalOpen(false)}
       />
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

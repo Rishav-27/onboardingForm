@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, LogIn, User2, Settings, Home, Briefcase } from 'lucide-react';
+import { LogOut, LogIn, User2, Home, Briefcase } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/lib/useAuthStore';
+import { supabase } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,25 +23,28 @@ interface HeaderProps {
 }
 
 export function Header({ onLoginClick }: HeaderProps) {
-    const { isAuthenticated, logout, userId, full_name, profile_image_url, isAdmin, fetchUserData } = useAuthStore();
+    const { isAuthenticated, logout, full_name, profile_image_url, isAdmin } = useAuthStore();
     const router = useRouter();
-
-    // Fetch user data if authenticated but missing user info
-    useEffect(() => {
-        if (isAuthenticated && userId && !full_name) {
-            fetchUserData(userId);
-        }
-    }, [isAuthenticated, userId, full_name, fetchUserData]);
 
     const handleLogout = async () => {
         try {
-            await fetch('/api/auth/logout', { method: 'POST' });
+            // Clear Supabase session first
+            await supabase.auth.signOut();
+
+            // Clear local auth state
             logout();
-            toast.success('Logged out successfully!');
+
+            // Clear any cached data
+            if (typeof window !== 'undefined') {
+                localStorage.clear();
+                sessionStorage.clear();
+            }
+
+            toast.success('Logged out successfully!', { position: 'bottom-right' });
             router.push('/');
         } catch (error) {
             console.error('Logout failed:', error);
-            toast.error('Logout failed. Please try again.');
+            toast.error('Logout failed. Please try again.', { position: 'bottom-right' });
         }
     };
 
